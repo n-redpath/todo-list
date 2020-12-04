@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To Do!</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://kit.fontawesome.com/0d30c02dfc.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <h2>To Do List</h2>
+
+    <div class="edit" id="edit">
+        <i class="fas fa-times" id="x"></i>
+        <br>
+        <br><br>
+        <form action="#" id="editForm">
+        <input type="text" id="editText">
+        <br><br>
+        <input type="submit">
+    </form>
+
+    </div>
+
+    <div>
+        <!-- form to add a new to do -->
+        <form action="#" id="newItem">
+        
+            <label for="newToDo"> Add a new to do:</label><br>
+            <input type="text" id="newToDo">
+            <br>
+            <input type="submit" id="addToDo">
+        </form>
+    </div>
+    <br>
+    <hr>
+
+    <div class="bottomHalf">
+    <!-- list of current to dos -->
+    <ul id="toDoList">
+
+    </ul>
+
+</div>
+</body>
+
+
+<script>
+    // Javascript goes here. 
+
+    // API key: 10ba75-7bf7d1-759a4a-e837bf-7978cc
+
+    window.addEventListener("load", getList);
+
+    var toDos;
+    var itemToEdit; 
+
+    function getList() {
+        document.getElementById("toDoList").innerHTML = ""
+        // The following code is modified from the name generator lab.
+        // GET TODOS
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                toDos = JSON.parse(this.responseText);
+                for (var i = 0; i < toDos.length; i++) {
+                    populate(toDos[i], i)
+                }
+
+            }
+        };
+
+        xhttp.open("GET", "https://cse204.work/todos", true);
+        xhttp.setRequestHeader("x-api-key", "10ba75-7bf7d1-759a4a-e837bf-7978cc");
+        xhttp.send();
+    }
+
+
+    function populate(item, i) {
+        // populate HTML with a new to do. 
+        var list = document.getElementById("toDoList")
+        // create new list item 
+        newDiv = document.createElement("div")
+        newDiv.setAttribute("id", "div" + i)
+        newItem = document.createElement("li")
+        edit = document.createElement("i")
+        edit.setAttribute("class", "fas fa-edit")
+        edit.addEventListener("click", function(){showEdit(i)})
+        check = document.createElement("button")
+        check.addEventListener("click", function(){ 
+            completeItem(i, check)}
+        )
+        deleteButton = document.createElement("input")
+        deleteButton.type = "submit" 
+        // deleteButton.value = "Delete"
+        deleteButton.setAttribute("id", i)
+        deleteButton.addEventListener("click", function () { deleteItem(i) })
+        newItem.innerHTML = item.text
+
+        if (item.completed){
+            newItem.setAttribute("class", "done")
+        }
+        else{
+            newItem.setAttribute("class", "not-done")
+        }
+        newItem.appendChild(edit)
+        newItem.appendChild(deleteButton)
+        list.appendChild(newDiv).appendChild(newItem).appendChild(check)
+
+    }
+
+
+    var form = document.getElementById("newItem");
+    function handleForm(event) { event.preventDefault(); } 
+    form.addEventListener('submit', addNewToDo);
+    // document.getElementById("newItem").addEventListener('submit', addNewToDo, true);
+
+
+    function addNewToDo() {
+        console.log("adding new to do")
+        // The following code is modified from the ToDo API
+        // SEND TODOS (this code works)
+        // Setting variable for form input (get from HTML form)
+        var data = {
+            text: document.getElementById("newToDo").value
+        }
+
+        // Initalize AJAX Request
+        var xhttp2 = new XMLHttpRequest();
+
+        // Response handler
+        xhttp2.onreadystatechange = function () {
+            // Wait for readyState = 4 & 200 response
+            if (this.readyState == 4 && this.status == 200) {
+                // parse JSON response
+                var todo = JSON.parse(this.responseText);
+                console.log(todo);
+                populate(todo, toDos.length)
+                toDos.push(todo)
+                // getList()
+                document.getElementById("newItem").reset()
+            } else if (this.readyState == 4) {
+                // this.status !== 200, error from server
+                console.log(this.responseText);
+            }
+        };
+
+        xhttp2.open("POST", "https://cse204.work/todos", true);
+        xhttp2.setRequestHeader("Content-type", "application/json");
+        xhttp2.setRequestHeader("x-api-key", "10ba75-7bf7d1-759a4a-e837bf-7978cc");
+        xhttp2.send(JSON.stringify(data));
+
+    }
+
+
+
+    function deleteItem(id) {
+        console.log("deleting item")
+        console.log(id)
+        console.log(toDos[id].id)
+
+        var xhttp2 = new XMLHttpRequest();
+
+        // Response handler
+        xhttp2.onreadystatechange = function () {
+            // Wait for readyState = 4 & 200 response
+            if (this.readyState == 4 && this.status == 200) {
+                // print JSON response
+                console.log(this.responseText);
+                document.getElementById("div"+id).innerHTML = ""
+            } else if (this.readyState == 4) {
+                // this.status !== 200, error from server
+                console.log(this.responseText);
+            }
+        };
+
+        xhttp2.open("DELETE", "https://cse204.work/todos/" + toDos[id].id, true);
+        xhttp2.setRequestHeader("Content-type", "application/json");
+        xhttp2.setRequestHeader("x-api-key", "10ba75-7bf7d1-759a4a-e837bf-7978cc");
+        xhttp2.send();
+
+    }
+
+
+    function completeItem(i){
+        // here i need to change the status of the item, put that into the server, and then update the view. 
+
+        console.log(toDos[i].completed)
+        if (toDos[i].completed){
+            console.log("undoing")
+            document.getElementById(i).parentElement.setAttribute("class", "not-done")
+            // populate(todos[i], i)
+            var data = {
+                completed: false
+            }
+        }
+        else {
+            document.getElementById(i).parentElement.setAttribute("class", "done")
+            // populate(todos[i], i)
+            var data = {
+            completed: true
+        }
+        }
+        
+
+        // Initalize AJAX Request
+        var xhttp2 = new XMLHttpRequest();
+
+        // Response handler
+        xhttp2.onreadystatechange = function () {
+            // Wait for readyState = 4 & 200 response
+            if (this.readyState == 4 && this.status == 200) {
+                // parse JSON response
+                var todo = JSON.parse(this.responseText);
+                console.log(this.responseText);
+                // populate(todo, i)
+
+            } else if (this.readyState == 4) {
+                // this.status !== 200, error from server
+                console.log(this.responseText);
+            }
+        };
+
+        xhttp2.open("PUT", "https://cse204.work/todos/"+toDos[i].id, true);
+        xhttp2.setRequestHeader("Content-type", "application/json");
+        xhttp2.setRequestHeader("x-api-key", "10ba75-7bf7d1-759a4a-e837bf-7978cc");
+        xhttp2.send(JSON.stringify(data));
+
+    }
+
+    function showEdit(i) {
+        console.log("editing")
+        editThing = document.getElementById("edit")
+        document.getElementById("editText").value = toDos[i].text
+        editThing.style.visibility = "visible"
+        itemToEdit = i
+    }
+
+
+    var editForm = document.getElementById("editForm");
+    function handleForm(event) { event.preventDefault(); } 
+    editForm.addEventListener('submit', editItem);
+
+    function editItem(){
+        var newText = document.getElementById("editText").value
+
+        var data = {
+            text: newText
+        }
+
+        // Initalize AJAX Request
+        var xhttp2 = new XMLHttpRequest();
+
+        // Response handler
+        xhttp2.onreadystatechange = function () {
+            // Wait for readyState = 4 & 200 response
+            if (this.readyState == 4 && this.status == 200) {
+                // parse JSON response
+                var todo = JSON.parse(this.responseText);
+                console.log(todo);
+
+                document.getElementById("toDoList").innerHTML = ""
+                getList()
+
+                document.getElementById("edit").style.visibility = "hidden"
+            } else if (this.readyState == 4) {
+                // this.status !== 200, error from server
+                console.log(this.responseText);
+            }
+        };
+
+        xhttp2.open("PUT", "https://cse204.work/todos/"+toDos[itemToEdit].id, true);
+        xhttp2.setRequestHeader("Content-type", "application/json");
+        xhttp2.setRequestHeader("x-api-key", "10ba75-7bf7d1-759a4a-e837bf-7978cc");
+        xhttp2.send(JSON.stringify(data));
+
+
+
+    }
+
+    document.getElementById("x").addEventListener("click", function(){document.getElementById("edit").style.visibility="hidden"})
+
+
+</script>
+
+</html>
